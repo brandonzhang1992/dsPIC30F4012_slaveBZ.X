@@ -121,7 +121,7 @@ pid_t mypid;
 
 
 // Misc. variables
-unsigned int InData0[4] = {0, 0, 0, 0};
+unsigned int InData0[4] = {12000, 0, 0, 0};
 unsigned int InData1[4] = {0, 0, 0, 0};
 unsigned int motorState = INITIALIZE;
 unsigned int ADCValue0, ADCValue1 = 0;
@@ -133,6 +133,123 @@ unsigned int adcbufferindex = 0;
 unsigned int ADCsum = 0;
 unsigned char fullflag = 0;
 
+
+//void InitCan(void) {
+//    // Initializing CAN Module Control Register
+//    C1CTRLbits.REQOP = CONFIG_MODE; // 4 = Configuration mode
+//    C1CTRLbits.CANCAP = 1; // Enable CAN capture
+//    C1CTRLbits.CSIDL = 0; // 0 = Continue CAN module op in idle mode
+//    C1CTRLbits.CANCKS = 0; // 1: Fcan=Fcy 0: Fcan=4Fcy
+//    C1CFG1bits.SJW = 0; // Synchronized jump width is 1xTq
+//    C1CFG1bits.BRP = 8; // Baud rate prescaler = 20 (CAN baud rate of 100kHz
+//    C1CFG2bits.SEG2PHTS = 1; // 1=Freely Programmable 0=Maximum of SEG1PH or 3Tq's whichever is greater
+//    C1CFG2bits.PRSEG = 1; // Propagation Segment = 2Tq
+//    C1CFG2bits.SEG1PH = 6; // Phase Buffer Segment 1 = 7Tq
+//    C1CFG2bits.SEG2PH = 5; // Phase Buffer Segment 2 = 6Tq
+//    C1CFG2bits.SAM = 1; // 1=Bus line sampled 3 times 0=Bus line sampled once
+//
+//    // Initializing CAN interrupt
+//    C1INTF = 0; // Reset all CAN interrupts
+//    IFS1bits.C1IF = 0; // Reset Interrupt flag status register
+//    C1INTE = 0x00FF; // Enable all CAN interrupt sources
+//    IPC6bits.C1IP = 6; // CAN 1 Module interrupt is priority 6
+//    IEC1bits.C1IE = 1; // Enable CAN1 Interrupt
+//
+//    /*---------------------------------------------------------
+//     *  CONFIGURE RECEIVER REGISTERS, FILTERS AND MASKS
+//     *---------------------------------------------------------*/
+//
+//    // Configure CAN Module Receive Buffer Register
+//    C1RX0CONbits.DBEN = 0; // Buffer 0 does not overflow in buffer 1
+//    C1RX0CONbits.FILHIT = 0; // Buffer 0 = Acceptance filter 0
+//    C1RX1CONbits.FILHIT = 2; // Buffer 1 = Acceptance filter 2
+//
+//    // Initializing Acceptance Mask Register
+//    C1RXM0SID = 0x1FFD; // SID = 11111111111
+//    C1RXM1SID = 0x1FFD; // SID = 11111111111
+//
+//    // Initializing Message Acceptance filter
+//    C1RXF0SID = 0x0AA8; // SID = 01010101010
+//    C1RXF2SID = 0x1554; // SID = 10101010101
+//    C1RXF1SID = 0x0000; // SID = 00000000000
+//    C1RXF3SID = 0x0000; // SID = 00000000000
+//    C1RXF4SID = 0x0000; // SID = 00000000000
+//    C1RXF5SID = 0x0000; // SID = 00000000000
+//
+//    /*---------------------------------------------------------
+//     *  CONFIGURE RECEIVER REGISTERS, FILTERS AND MASKS
+//     *---------------------------------------------------------*/
+//
+//    // Configure CAN Module Transmit Buffer Register
+//    C1TX0CONbits.TXPRI = 1; // 1 = High message priority
+//    C1TX2CONbits.TXPRI = 2; // 2 = High intermediate message priority
+//
+//    // Initializing Transmit SID
+//    C1TX0SID = 0X50A8; // SID = 01010101010
+//    C1TX1SID = 0XA854; // SID = 10101010101
+//    C1TX0DLCbits.DLC = 8; // Data length is 8bytes
+//    C1TX1DLCbits.DLC = 8; // Data length is 8bytes
+//
+//}
+
+//void InitCan(void) {
+//    // Initializing CAN Module Control Register
+//    C1CTRLbits.REQOP = CONFIG_MODE; // 4 = Configuration mode
+//    C1CTRLbits.CANCAP = 1; // Enable CAN capture
+//    C1CTRLbits.CSIDL = 0; // 0 = Continue CAN module op in idle mode
+//    C1CTRLbits.CANCKS = 0; // 1: Fcan=Fcy 0: Fcan=4Fcy
+//    C1CFG1bits.SJW = 0; // Synchronized jump width is 1xTq
+//    C1CFG1bits.BRP = 4; // Baud rate prescaler = 20 (CAN baud rate of 125kHz
+//    C1CFG2bits.SEG2PHTS = 1; // 1=Freely Programmable 0=Maximum of SEG1PH or 3Tq's whichever is greater
+//    C1CFG2bits.PRSEG = 1; // Propagation Segment = 2Tq
+//    C1CFG2bits.SEG1PH = 6; // Phase Buffer Segment 1 = 7Tq
+//    C1CFG2bits.SEG2PH = 5; // Phase Buffer Segment 2 = 6Tq
+//    C1CFG2bits.SAM = 1; // 1=Bus line sampled 3 times 0=Bus line sampled once
+//
+//    // Initializing CAN interrupt
+//    C1INTF = 0; // Reset all CAN interrupts
+//    IFS1bits.C1IF = 0; // Reset Interrupt flag status register
+//    C1INTE = 0x00FF; // Enable all CAN interrupt sources
+//    IPC6bits.C1IP = 6; // CAN 1 Module interrupt is priority 6
+//    IEC1bits.C1IE = 1; // Enable CAN1 Interrupt
+//
+//    /*---------------------------------------------------------
+//     *  CONFIGURE RECEIVER REGISTERS, FILTERS AND MASKS
+//     *---------------------------------------------------------*/
+//
+//    // Configure CAN Module Receive Buffer Register
+//    C1RXF0SIDbits.EXIDE = 0; //turn of extended bit
+//    C1RX0CONbits.DBEN = 1; // Buffer 0 does not overflow in buffer 1
+//    C1RX0CONbits.FILHIT = 0; // Buffer 0 = Acceptance filter 0
+////    C1RX1CONbits.FILHIT = 2; // Buffer 1 = Acceptance filter 2
+//
+//    // Initializing Acceptance Mask Register
+//    C1RXM0SID = 0b11111111111; // SID = 00000011111
+////    C1RXM1SID = 0x0000; // SID = 00000000000
+//
+//    // Initializing Message Acceptance filter
+//    C1RXF0SID = 0B10101110001; // SID = 00000000001
+////    C1RXF1SID = 0x0000; // SID = 00000000000
+////    C1RXF2SID = 0x0000; // SID = 00000000000
+////    C1RXF3SID = 0x0000; // SID = 00000000000
+////    C1RXF4SID = 0x0000; // SID = 00000000000
+////    C1RXF5SID = 0x0000; // SID = 00000000000
+//
+//    /*---------------------------------------------------------
+//     *  CONFIGURE RECEIVER REGISTERS, FILTERS AND MASKS
+//     *---------------------------------------------------------*/
+//
+//    // Configure CAN Module Transmit Buffer Register
+//    C1TX0CONbits.TXPRI = 1; // 1 = High message priority
+////    C1TX2CONbits.TXPRI = 2; // 2 = High intermediate message priority
+//    C1TX0SIDbits.TXIDE = 0;//turn of extended bit
+//
+//    // Initializing Transmit SID
+//    C1TX0SID = 0X0020; // SID = 01010101010
+////    C1TX1SID = 0X0000; // SID = 10101010101
+//    C1TX0DLCbits.DLC = 8; // Data length is 8bytes
+//    C1TX1DLCbits.DLC = 8; // Data length is 8bytes
+//}
 
 void InitCan(void) {
     // Initializing CAN Module Control Register
@@ -152,7 +269,6 @@ void InitCan(void) {
     C1INTF = 0; // Reset all CAN interrupts
     IFS1bits.C1IF = 0; // Reset Interrupt flag status register
     C1INTE = 0x00FF; // Enable all CAN interrupt sources
-    IPC6bits.C1IP = 6; // CAN 1 Module interrupt is priority 6
     IEC1bits.C1IE = 1; // Enable CAN1 Interrupt
 
     /*---------------------------------------------------------
@@ -161,35 +277,33 @@ void InitCan(void) {
 
     // Configure CAN Module Receive Buffer Register
     C1RX0CONbits.DBEN = 0; // Buffer 0 does not overflow in buffer 1
-    C1RX0CONbits.FILHIT = 0; // Buffer 0 = Acceptance filter 0
-    C1RX1CONbits.FILHIT = 2; // Buffer 1 = Acceptance filter 2
 
     // Initializing Acceptance Mask Register
-    C1RXM0SID = 0x1FFD; // SID = 11111111111
-    C1RXM1SID = 0x1FFD; // SID = 11111111111
+    C1RXM0SID = 0x1FFD;
 
     // Initializing Message Acceptance filter
-    C1RXF0SID = 0x0AA8; // SID = 01010101010
-    C1RXF2SID = 0x1554; // SID = 10101010101
-    C1RXF1SID = 0x0000; // SID = 00000000000
-    C1RXF3SID = 0x0000; // SID = 00000000000
-    C1RXF4SID = 0x0000; // SID = 00000000000
-    C1RXF5SID = 0x0000; // SID = 00000000000
+    C1RXF0SID = 0x0AA8; // 0x0FA
 
     /*---------------------------------------------------------
      *  CONFIGURE RECEIVER REGISTERS, FILTERS AND MASKS
      *---------------------------------------------------------*/
 
     // Configure CAN Module Transmit Buffer Register
-    C1TX0CONbits.TXPRI = 1; // 1 = High message priority
-    C1TX2CONbits.TXPRI = 2; // 2 = High intermediate message priority
+    C1TX0CONbits.TXPRI = 2; // 2 = High intermediate message priority
 
     // Initializing Transmit SID
-    C1TX0SID = 0X50A8; // SID = 01010101010
-    C1TX1SID = 0XA854; // SID = 10101010101
+    C1TX0SID = 0X50A8;
     C1TX0DLCbits.DLC = 8; // Data length is 8bytes
-    C1TX1DLCbits.DLC = 8; // Data length is 8bytes
 
+    // Data Field 1,Data Field 2, Data Field 3, Data Field 4 // 8 bytes selected by DLC
+
+//    C1TX0B1 = OutData0[0];
+//    C1TX0B2 = OutData0[1];
+//    C1TX0B3 = OutData0[2];
+//    C1TX0B4 = OutData0[3];
+
+    C1CTRLbits.REQOP = NORMAL;
+    while (C1CTRLbits.OPMODE != NORMAL); //Wait for CAN1 mode change from Configuration Mode to Loopback mode
 }
 
 void InitInt(void) {
@@ -352,16 +466,11 @@ void InitPid(pid_t *p, float kp, float kd, float ki, float T, unsigned short N, 
 void CalcPid(pid_t *mypid)
 {
     volatile float pidOutDutyCycle;
-    volatile int target = 12000;//C1RX0B1;//(int)targetPos;
+    volatile int target = InData0[0];//(int)targetPos;
     volatile int motorPos = (int)POSCNT;
     volatile float error = 0.0;
 
-//    mypid->y = degMTR;
     error = (float)(target - motorPos);
-
-//    mypid->i = mypid->e+mypid->elast; // accumulated error
-//    mypid->d = mypid->e-mypid->elast; // difference in error
-//    mypid->u = mypid->Kp*error;//+mypid->Kd*mypid->d+mypid->Ki*mypid->i;
 
     pidOutDutyCycle = (mypid->Kp*error);
 
@@ -376,10 +485,6 @@ void CalcPid(pid_t *mypid)
         PDC1 = (unsigned int)(pidOutDutyCycle);
         PDC2  = 0;
     }
-
-//    PDC1 = pwmOUT[CW]; // 16-bit register
-//    PDC2 = pwmOUT[CCW]; // 16-bit register
-
     return;
 }
 
@@ -396,7 +501,7 @@ int main() {
     //    unsigned char i,j = 0;
     //    char txData[UART_TX_LEN] = {'\0'};
     //    char rxData[UART_TX_LEN] = {'\0'};
-//        InitCan();
+    InitCan();
     //    InitInt();
     //    InitAdc();
     InitQEI();
@@ -410,9 +515,9 @@ int main() {
     TRISGRN = 0;
 
     //INITIALIZE:
-//    LEDRED = 1;
-    //  LEDYLW = 0;
-    LEDGRN = 1;
+    LEDRED = 0;
+    LEDYLW = 0;
+    LEDGRN = 0;
 
     // Initialization to offset POSCNT to three turns (12000 counts)
     POSCNT = 12000; // This prevents under and overflow of the POSCNT register
@@ -428,28 +533,21 @@ int main() {
     InitPid(&mypid, PID_KP, PID_KD, PID_KI, PID_TS, PID_N, 0.0, 0.0, 0.0, 0.0);
 
     // Enable CAN module
-//    C1CTRLbits.REQOP = NORMAL;
-//    while (C1CTRLbits.OPMODE != NORMAL);
+    C1CTRLbits.REQOP = NORMAL;
+    while (C1CTRLbits.OPMODE != NORMAL);
 
     //Turn on timer 1
     T1CONbits.TON = 1;
      
 
     while (1) {
-            
-//            CalcPid(&mypid);
-        
-//
-//
+//        if (InData0[3] == 2) {
+//              C1TX0B4 = 1;
+//              C1TX0B1 = POSCNT;
+//              C1TX0CONbits.TXREQ = 1;
+//              while (C1TX0CONbits.TXREQ != 0);
 
-
-
-
-//                PDC1 = pwmOUT[0]; // 16-bit register
-//                PDC2 = pwmOUT[1]; // 16-bit register
-
-
-            
+//        }
 //        sprintf(txData, "KP: %f Kd: %f Ki: %f\r\n", mypid.Kp, mypid.Kd, mypid.Ki);
 //        for (i = 0; i < UART_TX_LEN; i++) {
 //            U1TXREG = txData[i];
@@ -502,36 +600,27 @@ int main() {
 //    IFS0bits.INT0IF = 0;
 //}
 
-//void __attribute__((interrupt, no_auto_psv)) _C1Interrupt(void) {
-//    IFS1bits.C1IF = 0; // Clear interrupt flag
-////    LEDRED = 1;
-//    if (C1INTFbits.TX0IF) {
-//        C1INTFbits.TX0IF = 0;
-//    }
-//
-//
-//    if (C1INTFbits.RX0IF) {
-//        C1INTFbits.RX0IF = 0;
-//
-//        InData0[0] = C1RX0B1;
-//        InData0[1] = C1RX0B2; //Move the recieve data from Buffers to InData
-//        InData0[2] = C1RX0B3;
-//        InData0[3] = C1RX0B4;
-//        motorState = C1RX0B4;
-//        C1RX0CONbits.RXFUL = 0;
-//    }
+void __attribute__((interrupt, no_auto_psv)) _C1Interrupt(void) {
+    IFS1bits.C1IF = 0; // Clear interrupt flag
+//    C1INTFtest = C1INTF;
+    if (C1INTFbits.TX0IF) {
+        C1INTFbits.TX0IF = 0;
+//        RX0IFtest += 1;
+    }
 
-//    if (C1INTFbits.RX1IF) {
-//        C1INTFbits.RX1IF = 0;
-//
-//        InData1[0] = C1RX1B1;
-//        InData1[1] = C1RX1B2; //Move the recieve data from Buffers to InData
-//        InData1[2] = C1RX1B3;
-//        InData1[3] = C1RX1B4;
-//        C1RX1CONbits.RXFUL = 0;
-//    }
-//    LEDRED = 0;
-//}
+    if (C1INTFbits.RX0IF) {
+        C1INTFbits.RX0IF = 0;
+
+        InData0[0] = C1RX0B1;
+        InData0[1] = C1RX0B2; //Move the recieve data from Buffers to InData
+        InData0[2] = C1RX0B3;
+        InData0[3] = C1RX0B4;
+        //        LED1 ^= 1;
+        //        RX0IFtest += 1;
+        C1RX0CONbits.RXFUL = 0;
+    }
+}
+
 
 //void __attribute__((interrupt, no_auto_psv)) _U1TXInterrupt(void) {
 //    IFS0bits.U1TXIF = 0; // Clear U1TX interrupt
@@ -544,8 +633,5 @@ int main() {
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
 {
     IFS0bits.T1IF = 0;   // Clear timer 1 interrupt flag
-//    TMR1 = 0;
-    LEDRED = 1;
     CalcPid(&mypid);
-    LEDRED = 0;
 }
