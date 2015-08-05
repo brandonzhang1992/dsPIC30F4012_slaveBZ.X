@@ -427,7 +427,7 @@ void InitTmr1(void)
    T1CONbits.TGATE = 0;     // Gated timer accumulation disabled
    T1CONbits.TCS = 0;       // Use Tcy as source clock
    T1CONbits.TCKPS = 0;     // Tcy/1 as input clock
-   PR1 = 10000;              // Interrupt period = 10ms
+   PR1 = 1000;              // Interrupt period = 10ms
    IFS0bits.T1IF = 0;       // Clear timer 1 interrupt flag
    IEC0bits.T1IE = 1;       // Enable timer 1 interrupts
    IPC0bits.T1IP = 7;       // Enable timer 1 interrupts
@@ -489,6 +489,7 @@ void CalcPid(pid_t *mypid)
 }
 
 
+
 void UpdatePid(pid_t *mypid)
 {
    // Update PD variables
@@ -503,7 +504,7 @@ int main() {
     //    char rxData[UART_TX_LEN] = {'\0'};
     InitCan();
     //    InitInt();
-    //    InitAdc();
+    InitAdc();
     InitQEI();
     InitPwm();
     //    InitUart();
@@ -518,13 +519,16 @@ int main() {
     LEDRED = 0;
     LEDYLW = 0;
     LEDGRN = 0;
+    unsigned int i = 0;
+
+    unsigned int k = 0;
 
     // Initialization to offset POSCNT to three turns (12000 counts)
     POSCNT = 12000; // This prevents under and overflow of the POSCNT register
     //
 
     // Enable ADC Module
-    //  ADCON1bits.ADON = 1; // A/D converter module on
+    ADCON1bits.ADON = 1; // A/D converter module on
 
     // Enable PWM Module
     PTCONbits.PTEN = 1;
@@ -541,13 +545,25 @@ int main() {
      
 
     while (1) {
-//        if (InData0[3] == 2) {
-//              C1TX0B4 = 1;
-//              C1TX0B1 = POSCNT;
-//              C1TX0CONbits.TXREQ = 1;
-//              while (C1TX0CONbits.TXREQ != 0);
 
-//        }
+            msDelay(3);
+            C1TX0B2 = POSCNT;
+            C1TX0B3 = ADCValue0;
+            C1TX0CONbits.TXREQ = 1;
+            while (C1TX0CONbits.TXREQ != 0);
+
+            if(InData0[3] > 12000){
+                LEDGRN = 1;
+                LEDYLW = 0;
+            }
+
+            if(InData0[3] < 12000){
+                LEDYLW = 1;
+                LEDGRN = 0;
+            }
+//            }
+
+       
 //        sprintf(txData, "KP: %f Kd: %f Ki: %f\r\n", mypid.Kp, mypid.Kd, mypid.Ki);
 //        for (i = 0; i < UART_TX_LEN; i++) {
 //            U1TXREG = txData[i];
@@ -557,11 +573,21 @@ int main() {
     } //while
 } // main
 
-//void __attribute__((interrupt, no_auto_psv)) _ADCInterrupt(void) {
-//    IFS0bits.ADIF = 0;
+void __attribute__((interrupt, no_auto_psv)) _ADCInterrupt(void) {
+    IFS0bits.ADIF = 0;
+    ADCValue0 = ADCBUF0;
+    if(ADCValue0 >= 1){
+                LEDRED = 1;
+            }
+            else{
+                LEDRED = 0;
+            }
 //    unsigned int k = 0;
-////    ADCValue0 = ADCBUF0;
-//
+   
+//     C1TX0B2 = ADCBUF0;
+//     C1TX0CONbits.TXREQ = 1;
+//     while (C1TX0CONbits.TXREQ != 0);
+
 //      if (adcbufferindex >= INDEXSIZE) {
 //        adcbufferindex = 0;
 //        fullflag = 1;
@@ -585,7 +611,7 @@ int main() {
 ////                ADCValue0 = ADCsum*0.1;
 ////                return ADCsum;
 //            }
-//            ADCValue0 = ADCsum*indexsize;
+//            ADCValue0 = ADCsum*0.1;
 //
 //        }
 //        if(ADCValue0 > 120){
@@ -594,7 +620,7 @@ int main() {
 //    }
 //
 //        adcbufferindex += 1;
-//}
+}
 
 //void __attribute__((interrupt, no_auto_psv)) _INT0Interrupt(void) {
 //    IFS0bits.INT0IF = 0;
