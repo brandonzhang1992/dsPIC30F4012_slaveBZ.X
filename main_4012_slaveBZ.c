@@ -19,7 +19,6 @@
 #define TRISRED  TRISEbits.TRISE3 // YELLOW
 #define TRISYLW  TRISEbits.TRISE4 // YELLOW
 #define TRISGRN  TRISEbits.TRISE5 // GREEN
-#define UART_TX_LEN 50
 
 
 // CAN Operation Modes
@@ -36,10 +35,6 @@
 #define BITRATE     1000000  // 100kbps
 #define NTQ         16      // Amount of Tq per bit time
 #define BRP_VAL     (((4*FCY)/(2*NTQ*BITRATE))-1) // refer to pg. 693 of Family Reference
-
-// UART baud rate
-#define UART_BAUD   115000
-#define UART_BRG    (FCY/(16*UART_BAUD))-1 // refer to pg. 506 of family reference
 
 // Define PID controls
 #define PID_KP  2.0
@@ -265,23 +260,7 @@ void InitTmr2(void)
    return;
 }
 
-//Delay function
-void msDelay(unsigned int mseconds) //For counting time in ms
-//-----------------------------------------------------------------
-{
-    int i;
-    int j;
-    for (i = mseconds; i; i--) {
-        for (j = 714; j; j--) {
-            // 5667 for XT_PLL8 -> Fcy = 34MHz
-            // 714 for 20MHz oscillator -> Fcy=4.3MHz
-            // 265 for FRC
-        } // 1ms/(250ns/instruction*4instructions/forloop)=1000 for loops
-    }
-    return;
-}
-
-//PID initialization
+//PID initialization function
 void InitPid(pid_t *p, float kp, float kd, float ki, float T, unsigned short N, float il, float yl, float dl, float el)
 {
     p->Kp = kp;
@@ -299,7 +278,7 @@ void InitPid(pid_t *p, float kp, float kd, float ki, float T, unsigned short N, 
 void CalcPid(pid_t *mypid)
 {
     volatile float pidOutDutyCycle;
-    volatile int target = InData0[0];//(int)targetPos;
+    volatile int target = InData0[0]; //Sets InData0[0] (Master position) as the target
     volatile int motorPos = (int)POSCNT;
     volatile float error = 0.0;
 
@@ -313,12 +292,12 @@ void CalcPid(pid_t *mypid)
     if (pidOutDutyCycle >= 997.0) pidOutDutyCycle = 997.0;
     if (pidOutDutyCycle <= -997.0) pidOutDutyCycle = -997.0;
 
-    //Motor CW Operation
+    //Motor CCW Operation
     if (pidOutDutyCycle < 0.0){
         PDC1 = 0;
         PDC2  = (unsigned int)((-1.0)*(pidOutDutyCycle));
     }
-    //Motor CCW Operation
+    //Motor CW Operation
     else {
         PDC1 = (unsigned int)(1.0)*(pidOutDutyCycle);
         PDC2  = 0;
@@ -326,31 +305,23 @@ void CalcPid(pid_t *mypid)
     return;
 }
 
-
-//Update PID
-void UpdatePid(pid_t *mypid){
-   // Update PD variables
-    mypid->ylast = mypid->y;
-    mypid->dlast = mypid->d;
-    mypid->elast = mypid->e;
-}
-
 int main() {
-    //    char txData[UART_TX_LEN] = {'\0'};
-    //    char rxData[UART_TX_LEN] = {'\0'};
-
     //ISR initializations
     InitAdc();
     InitQEI();
     InitPwm();
-    //    InitUart();
     InitTmr1();
+    InitTmr2();
+    InitCan();
+
+
 
     //LED PORT initializations
     TRISRED = 0; // PORTE output
     TRISYLW = 0; // PORTE output
     TRISGRN = 0;
 
+    //set all leds to be off initially
     LEDRED = 0;
     LEDYLW = 0;
     LEDGRN = 0;
@@ -360,33 +331,12 @@ int main() {
 
     // Initialize PID
     InitPid(&mypid, PID_KP, PID_KD, PID_KI, PID_TS, PID_N, 0.0, 0.0, 0.0, 0.0);
-
-    //Turn on timer 1 (Motor PWM Calculation)
-    T1CONbits.TON = 1;
-
-    //Initialization phase move motor back for 7000 counts
-    unsigned int i = 0;
-    for(i = 0; i < 1000; i++){
-        InData0[0] = InData0[0] - 7;
-        msDelay(1);
-        LEDYLW = 1;
-    }
-
-    //turn of CalcPid and all pwm to motors
-    LEDYLW = 0;
-    PDC1 = 0;
-    PDC2 = 0;
-    T1CONbits.TON = 0;
-
-    //reinitialize QEI values
+    
+    //set initial QEI value
     POSCNT = 30000; // This prevents under and overflow of the POSCNT register
-    InData0[0] = 30000;
-    msDelay(1);
 
-    //turn CalcPID back on as well as initialize CAN bus
+    //turn  on timer 1 (for Motor Control)
     T1CONbits.TON = 1;
-    InitTmr2();
-    InitCan();
 
     // Enable ADC Module
     ADCON1bits.ADON = 1; // A/D converter module on
@@ -395,31 +345,21 @@ int main() {
     C1CTRLbits.REQOP = NORMAL;
     while (C1CTRLbits.OPMODE != NORMAL);
 
-    //Turn on timer 1 (Motor PWM Calculation)
-    T1CONbits.TON = 1;
-
     //Turn on timer 2 (CAN bus message transmission)
     T2CONbits.TON = 1;
      
 
     while (1) {
 
-       
-//        sprintf(txData, "KP: %f Kd: %f Ki: %f\r\n", mypid.Kp, mypid.Kd, mypid.Ki);
-//        for (i = 0; i < UART_TX_LEN; i++) {
-//            U1TXREG = txData[i];
-//            while (!(U1STAbits.TRMT));
-//        }
 
     } //while
 } // main
 
 //ADC Interrupt
 void __attribute__((interrupt, no_auto_psv)) _ADCInterrupt(void) {
-    IFS0bits.ADIF = 0;
-    ADCValue0 = ADCBUF0; //moves ADC buffer data to ADCValue0
+    IFS0bits.ADIF = 0;//turn off ADC interrupt flag
 
-    //Testing ADCValue data with LEDS
+    //Testing ADCValue0 data with LEDS when ADCValue0 has a value LEDRED is on
     if(ADCValue0 >= 1) {
         LEDRED = 1;
     } else {
@@ -429,16 +369,6 @@ void __attribute__((interrupt, no_auto_psv)) _ADCInterrupt(void) {
     //Trigger Receive message to send data through CAN BUS
     iRecievedMsg = 1;
 
-    //Testing Master POSCNT Data
-    if (InData0[2] > 12000) {
-//        LEDGRN = 1;
-//        LEDYLW = 0;
-    }
-
-    if (InData0[2] < 12000) {
-//        LEDYLW = 1;
-//        LEDGRN = 0;
-    }
 }
 
 // Can Bus interrupt
@@ -446,12 +376,12 @@ void __attribute__((interrupt, no_auto_psv)) _C1Interrupt(void) {
     IFS1bits.C1IF = 0; // Clear interrupt flag
 
     if (C1INTFbits.TX0IF) {
-        C1INTFbits.TX0IF = 0;
+        C1INTFbits.TX0IF = 0; //clear CAN bus transfer interrupt flag
 
     }
 
     if (C1INTFbits.RX0IF) {
-        C1INTFbits.RX0IF = 0;
+        C1INTFbits.RX0IF = 0; //clear CAN bus receive interrupt flag
 
         //Move the recieve data from Buffers to InData
         InData0[0] = C1RX0B1; //POSCNT (Master)
@@ -459,17 +389,9 @@ void __attribute__((interrupt, no_auto_psv)) _C1Interrupt(void) {
         InData0[2] = C1RX0B3; //ADCValue (Slave) (Currently Not in Use)
         InData0[3] = C1RX0B4; // PIC ID for UART (1 = Master, 2 = Slave)
  
-        C1RX0CONbits.RXFUL = 0;
+        C1RX0CONbits.RXFUL = 0; // clear CAN bus receive full bit
     }
 }
-
-//void __attribute__((interrupt, no_auto_psv)) _U1TXInterrupt(void) {
-//    IFS0bits.U1TXIF = 0; // Clear U1TX interrupt
-//}
-
-//void __attribute__((interrupt, no_auto_psv)) _U1RXInterrupt(void) {
-//    IFS0bits.U1RXIF = 0; // Clear U1RX interrupt
-//}
 
 //Timer 1 for outputing Motor PWM and PID Calculations
 void __attribute__((interrupt, no_auto_psv)) _T1Interrupt(void)
